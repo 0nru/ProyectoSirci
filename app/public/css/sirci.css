@@ -1,0 +1,5 @@
+/* Altura necesaria para que Leaflet pueda mostrar el mapa. */
+#mapa-reclamo {
+    height: 350px;
+    width: 100%;
+}

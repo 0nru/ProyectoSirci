@@ -1,0 +1,20 @@
+
+# Configuración privada de Laravel
+app/.env
+app/.env.*
+!app/.env.example
+
+# Dependencias y archivos generados
+app/vendor/
+app/node_modules/
+app/public/build/
+app/public/hot
+app/public/storage
+
+# Cachés y archivos temporales
+app/.phpunit.cache/
+app/.phpunit.result.cache
+app/storage/*.key
+*.log
+.DS_Store
+Thumbs.db
