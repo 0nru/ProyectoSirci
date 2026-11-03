@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <!-- Le indica al navegador que el documento utiliza HTML5. -->
 
@@ -43,6 +42,10 @@
 @if (auth()->user()->rol === 'ciudadano')
     <p>
         <a href="{{ route('reclamos.crear') }}">Registrar un reclamo</a>
+    </p>
+
+    <p>
+        <a href="{{ route('reclamos.index') }}">Mis reclamos</a>
     </p>
 @endif
 

@@ -126,4 +126,28 @@ class ReporteController extends Controller
         return redirect('/panel')
             ->with('status', 'Tu reclamo fue registrado correctamente.');
     }
+        // Muestra al ciudadano únicamente sus propios reclamos.
+    public function misReclamos()
+    {
+        // Solo los ciudadanos pueden entrar.
+        // Los supervisores reciben un error 403.
+        abort_unless(
+            Auth::user()->rol === 'ciudadano',
+            403,
+            'Solo los ciudadanos pueden consultar sus reclamos.'
+        );
+
+        // Busca los reclamos y carga sus categorías y estados.
+        $reclamos = Reporte::with(['categoria', 'estado'])
+            // El ID se obtiene de la sesión autenticada.
+            ->where('usuario_id', Auth::id())
+            // Ordena desde el reclamo más reciente.
+            ->orderByDesc('fecha_creacion')
+            // Si coinciden las fechas, prioriza el ID mayor.
+            ->orderByDesc('id')
+            ->get();
+
+        // Envía los resultados a la nueva vista.
+        return view('reportes.mis-reclamos', compact('reclamos'));
+    }
 }
