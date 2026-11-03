@@ -1,0 +1,272 @@
+/* SIRCI: adaptación visual del módulo de supervisión.
+   Conserva la estructura y funcionalidad de nuestras vistas. */
+
+:root {
+    --fondo: #F7F6F2;
+    --superficie: #FFFFFF;
+    --borde: #E3E0D6;
+    --texto: #1E2320;
+    --secundario: #5B6660;
+    --verde: #0F6E56;
+    --verde-oscuro: #0B5344;
+    --verde-suave: #E4F0EC;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    background: var(--fondo);
+    color: var(--texto);
+    font-family: 'IBM Plex Sans', system-ui, 'Segoe UI', sans-serif;
+    font-size: 15px;
+    line-height: 1.5;
+}
+
+.encabezado {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    padding: 20px 32px;
+    background: var(--superficie);
+    border-bottom: 1px solid var(--borde);
+}
+
+.encabezado > div {
+    display: flex;
+    flex-direction: column;
+}
+
+.encabezado strong {
+    color: var(--verde);
+    font-size: 22px;
+}
+
+.encabezado span {
+    color: var(--secundario);
+    font-size: 13px;
+}
+
+a {
+    color: var(--verde);
+    text-decoration: none;
+}
+
+a:hover {
+    color: var(--verde-oscuro);
+    text-decoration: underline;
+}
+
+.contenedor {
+    max-width: 1150px;
+    margin: 32px auto;
+    padding: 0 20px;
+}
+
+.tarjeta {
+    padding: 28px;
+    background: var(--superficie);
+    border: 1px solid var(--borde);
+    border-radius: 14px;
+    overflow-x: auto;
+}
+
+.tarjeta h1 {
+    margin: 0 0 16px;
+    font-size: 24px;
+    font-weight: 600;
+}
+
+.tarjeta > p {
+    margin: 12px 0;
+    color: var(--secundario);
+}
+
+.tarjeta > p strong {
+    color: var(--texto);
+}
+
+.aviso {
+    padding: 14px 18px;
+    margin: 16px 0;
+    background: var(--verde-suave);
+    color: var(--verde-oscuro);
+    border-radius: 8px;
+}
+
+.aviso p {
+    margin: 0;
+}
+
+.tabla-ubicaciones {
+    margin-top: 22px;
+    font-size: 14px;
+}
+
+.tabla-ubicaciones th {
+    background: var(--fondo);
+    color: var(--secundario);
+    font-weight: 600;
+}
+
+.tabla-ubicaciones td {
+    color: var(--texto);
+    border-bottom-color: var(--borde);
+}
+
+.tabla-ubicaciones tbody tr:hover {
+    background: #F7FAF8;
+}
+
+.estado-resumen {
+    background: var(--verde-suave);
+    color: var(--verde-oscuro);
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+@media (max-width: 640px) {
+    .encabezado {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 16px 20px;
+    }
+
+    .contenedor {
+        margin: 20px auto;
+        padding: 0 12px;
+    }
+
+    .tarjeta {
+        padding: 16px;
+    }
+
+    .tabla-ubicaciones tr {
+        background: var(--superficie);
+        border-color: var(--borde);
+    }
+
+    .tabla-ubicaciones td::before {
+        color: var(--secundario);
+    }
+    /* Tabla de reclamos individuales de una ubicación.
+   Mantiene el diseño visual de la lista de grupos. */
+
+.tabla-detalle {
+    margin-top: 22px;
+    font-size: 14px;
+}
+
+.tabla-detalle th {
+    background: var(--fondo);
+    color: var(--secundario);
+    font-weight: 600;
+}
+
+.tabla-detalle td {
+    color: var(--texto);
+    border-bottom-color: var(--borde);
+}
+
+.tabla-detalle tbody tr:hover {
+    background: #F7FAF8;
+}
+
+/* Presentación de cada reclamo en pantallas pequeñas. */
+@media (max-width: 640px) {
+    .tabla-detalle tr {
+        background: var(--superficie);
+        border-color: var(--borde);
+    }
+
+    .tabla-detalle td::before {
+        color: var(--secundario);
+    }
+}
+/* =========================================
+   PANEL PRINCIPAL DEL SUPERVISOR
+   ========================================= */
+
+/* Botón de cierre de sesión */
+.boton-salir {
+    padding: 10px 16px;
+    background: var(--superficie);
+    color: var(--verde);
+    border: 1px solid var(--verde);
+    border-radius: 8px;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.boton-salir:hover {
+    background: var(--verde-suave);
+}
+
+/* Encabezado de los módulos */
+.titulo-seccion {
+    margin-top: 32px;
+    margin-bottom: 16px;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+/* Contenedor de los accesos */
+.accesos-panel {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 16px;
+}
+
+/* Tarjeta de acceso a un módulo */
+.acceso-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 22px;
+
+    background: var(--fondo);
+    border: 1px solid var(--borde);
+    border-radius: 12px;
+
+    color: var(--texto);
+    text-decoration: none;
+
+    transition: border-color 0.2s, background 0.2s;
+}
+
+.acceso-panel:hover {
+    border-color: var(--verde);
+    background: var(--verde-suave);
+    color: var(--texto);
+    text-decoration: none;
+}
+
+.acceso-panel:focus-visible,
+.boton-salir:focus-visible {
+    outline: 3px solid var(--verde);
+    outline-offset: 3px;
+}
+
+.acceso-panel-titulo {
+    font-size: 17px;
+    font-weight: 600;
+}
+
+.acceso-panel-descripcion {
+    font-size: 14px;
+    color: var(--secundario);
+}
+
+.acceso-panel-enlace {
+    margin-top: auto;
+    padding-top: 8px;
+    color: var(--verde);
+    font-size: 14px;
+    font-weight: 600;
+}
+}

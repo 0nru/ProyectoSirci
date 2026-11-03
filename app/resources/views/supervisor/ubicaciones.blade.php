@@ -63,6 +63,9 @@
             }
         }
     </style>
+
+    {{-- Diseño visual adaptado del frontend del equipo --}}
+    <link rel="stylesheet" href="{{ asset('css/supervisor.css') }}">
 </head>
 <body>
 
@@ -160,7 +163,6 @@
                                         @endforeach
                                     </div>
                                 </td>
-                                    </div>
 
                                 {{-- Enlace al detalle de los reclamos de este grupo --}}
                                 <td data-label="Detalle">

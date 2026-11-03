@@ -62,6 +62,9 @@
             }
         }
     </style>
+
+    {{-- Estilos visuales compartidos por las pantallas del supervisor --}}
+    <link rel="stylesheet" href="{{ asset('css/supervisor.css') }}">
 </head>
 <body>
 
