@@ -47,7 +47,6 @@
             <h2 class="titulo-seccion">Módulos disponibles</h2>
 
             <div class="accesos-panel">
-
                 {{-- Acceso a nuestro módulo de agrupamiento geográfico --}}
                 <a href="{{ route('supervisor.ubicaciones') }}"
                    class="acceso-panel">
@@ -61,6 +60,23 @@
                         proximidad geográfica y categoría.
                         Acceder al detalle de cada ubicación.
                     </span>
+                    {{-- Acceso al tablero estadístico municipal --}}
+<a href="{{ route('indicadores') }}" class="acceso-panel">
+
+    <span class="acceso-panel-titulo">
+        <span aria-hidden="true">📊</span> Tablero de indicadores
+    </span>
+
+    <span class="acceso-panel-descripcion">
+        Consultar estadísticas de reclamos, estados,
+        categorías, tiempos de resolución y actividad reciente.
+    </span>
+
+    <span class="acceso-panel-enlace">
+        Ver indicadores →
+    </span>
+
+</a>
 
                     <span class="acceso-panel-enlace">
                         Ver ubicaciones →

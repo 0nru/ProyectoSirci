@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', function () {
     // Busca los elementos del formulario que vamos a utilizar.
-    const mapaElemento = document.getElementById('mapa-reclamo');
+    const mapaElemento = document.getElementById('mapa');
     const campoLatitud = document.getElementById('latitud');
     const campoLongitud = document.getElementById('longitud');
     const mensajeMapa = document.getElementById('mensaje-mapa');
@@ -23,9 +23,9 @@ document.addEventListener('DOMContentLoaded', function () {
     const zoomInicial = Number(mapaElemento.dataset.zoom);
 
     // Crea el mapa centrado inicialmente en Formosa.
-    const mapa = L.map('mapa-reclamo').setView(
-        [latInicial, lngInicial],
-        zoomInicial
+    const mapa = L.map(mapaElemento).setView(
+    [latInicial, lngInicial],
+    zoomInicial
     );
 
     // Agrega las imágenes cartográficas de OpenStreetMap.
