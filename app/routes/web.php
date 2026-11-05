@@ -88,6 +88,32 @@ Route::middleware('guest')->group(function () {
 */
 
 Route::middleware('auth')->group(function () {
+    /*
+|--------------------------------------------------------------------------
+| NOTIFICACIONES DEL CIUDADANO
+|--------------------------------------------------------------------------
+|
+| Permiten consultar las notificaciones y marcarlas como leídas.
+| El controlador comprueba que cada notificación pertenezca
+| al usuario que inició sesión.
+|
+*/
+
+// Muestra las notificaciones del usuario.
+    Route::get('/notificaciones',
+    [\App\Http\Controllers\NotificacionController::class, 'index'])
+    ->name('notificaciones');
+
+// Marca todas las notificaciones como leídas.
+    Route::post('/notificaciones/leer-todas',
+    [\App\Http\Controllers\NotificacionController::class, 'leerTodas'])
+    ->name('notificaciones.leerTodas');
+
+// Marca una notificación individual como leída.
+    Route::post('/notificaciones/{notificacion}/leer',
+    [\App\Http\Controllers\NotificacionController::class, 'leer'])
+    ->whereNumber('notificacion')
+    ->name('notificaciones.leer');
 
     /*
     |--------------------------------------------------------------------------
