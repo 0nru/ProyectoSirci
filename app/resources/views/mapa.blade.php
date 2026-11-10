@@ -4,6 +4,11 @@
 
 @push('estilos')
     <link rel="stylesheet" href="{{ asset('vendor/leaflet/leaflet.css') }}">
+    <style>
+        /* Sin sesión: mapa de solo lectura, sin columna de filtros. */
+        .mapa-layout--solo-lectura { display: block; }
+        .mapa-layout--solo-lectura #mapa-publico { cursor: default; }
+    </style>
 @endpush
 
 @section('contenido')
@@ -15,19 +20,23 @@
         <div class="leyenda">
             <span><i style="background:var(--st-recibido-pin)"></i>Recibido</span>
             <span><i style="background:var(--st-proceso-pin)"></i>En proceso</span>
-            <span><i style="background:var(--st-resuelto-pin)"></i>Resuelto</span>
+            @auth
+                <span><i style="background:var(--st-resuelto-pin)"></i>Resuelto</span>
+            @endauth
         </div>
     </div>
 
-    <div class="mapa-layout">
+    <div class="mapa-layout @guest mapa-layout--solo-lectura @endguest">
         <div>
             <div id="mapa-publico"
                  data-url="{{ route('mapa.datos') }}"
+                 data-interactivo="{{ auth()->check() ? '1' : '0' }}"
                  data-lat="-26.1849"
                  data-lng="-58.1731"
                  data-zoom="13"></div>
         </div>
 
+        @auth
         <aside class="mapa-lateral">
             <div class="card">
                 <div class="campo" style="margin-bottom:12px">
@@ -65,6 +74,10 @@
 
             <div class="mapa-lista" id="mapa-lista"></div>
         </aside>
+        @else
+            <div class="mapa-contador" id="mapa-contador" role="status">Cargando reclamos pendientes…</div>
+            <p class="muted small">Vista pública de solo lectura. Para utilizar los filtros y explorar los reclamos en el mapa, <a href="{{ route('registro') }}">registrate</a> o <a href="{{ route('login') }}">iniciá sesión</a>.</p>
+        @endauth
     </div>
 @endsection
 

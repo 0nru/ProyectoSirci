@@ -17,9 +17,18 @@
     var urlDatos = contenedor.dataset.url;
     var lista = document.getElementById('mapa-lista');
     var contador = document.getElementById('mapa-contador');
+    var interactivo = contenedor.dataset.interactivo === '1';
 
     // ---- Mapa base (OpenStreetMap), centrado en Formosa ----
-    var mapa = L.map(contenedor).setView(
+    var mapa = L.map(contenedor, {
+        zoomControl: interactivo,
+        dragging: interactivo,
+        touchZoom: interactivo,
+        scrollWheelZoom: interactivo,
+        doubleClickZoom: interactivo,
+        boxZoom: interactivo,
+        keyboard: interactivo
+    }).setView(
         [Number(contenedor.dataset.lat), Number(contenedor.dataset.lng)],
         Number(contenedor.dataset.zoom)
     );
@@ -85,37 +94,45 @@
     // ---- Dibujo de marcadores y lista lateral ----
     function dibujar(reportes) {
         capa.clearLayers();
-        lista.innerHTML = '';
+        if (lista) { lista.innerHTML = ''; }
 
         var puntos = [];
 
         reportes.forEach(function (r) {
-            var marcador = L.marker([r.lat, r.lng], { icon: icono(r.estado), title: r.categoria })
-                .bindPopup(popup(r))
-                .addTo(capa);
+            var marcador = L.marker([r.lat, r.lng], {
+                icon: icono(r.estado),
+                title: r.categoria,
+                interactive: interactivo,
+                keyboard: interactivo
+            }).addTo(capa);
 
             puntos.push([r.lat, r.lng]);
 
-            var item = document.createElement('button');
-            item.type = 'button';
-            item.className = 'mapa-item';
-            item.innerHTML =
-                '<span class="pin pin--' + slug(r.estado) + '" style="width:14px;height:14px;border-width:2px;flex-shrink:0"></span>' +
-                '<span style="flex:1;min-width:0">' +
-                    '<span class="mapa-item__titulo" style="display:block">' + escapar(r.categoria) + ' #' + r.id + '</span>' +
-                    '<span class="mapa-item__meta" style="display:block">' + escapar(r.barrio || 'Sin barrio') + ' · ' + escapar(r.hace) + '</span>' +
-                '</span>';
+            // Solo con sesión se permite abrir marcadores y explorar la lista.
+            if (interactivo && lista) {
+                marcador.bindPopup(popup(r));
 
-            item.addEventListener('click', function () {
-                mapa.setView([r.lat, r.lng], Math.max(mapa.getZoom(), 16));
-                marcador.openPopup();
-                contenedor.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            });
+                var item = document.createElement('button');
+                item.type = 'button';
+                item.className = 'mapa-item';
+                item.innerHTML =
+                    '<span class="pin pin--' + slug(r.estado) + '" style="width:14px;height:14px;border-width:2px;flex-shrink:0"></span>' +
+                    '<span style="flex:1;min-width:0">' +
+                        '<span class="mapa-item__titulo" style="display:block">' + escapar(r.categoria) + ' #' + r.id + '</span>' +
+                        '<span class="mapa-item__meta" style="display:block">' + escapar(r.barrio || 'Sin barrio') + ' · ' + escapar(r.hace) + '</span>' +
+                    '</span>';
 
-            lista.appendChild(item);
+                item.addEventListener('click', function () {
+                    mapa.setView([r.lat, r.lng], Math.max(mapa.getZoom(), 16));
+                    marcador.openPopup();
+                    contenedor.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                });
+
+                lista.appendChild(item);
+            }
         });
 
-        if (reportes.length === 0) {
+        if (lista && reportes.length === 0) {
             lista.innerHTML = '<div class="vacio"><strong>Sin resultados</strong>No hay reclamos con esos filtros.</div>';
         }
 
@@ -131,9 +148,11 @@
         var actual = ++pedidoActual;
         var params = new URLSearchParams();
 
-        if (filtros.categoria) { params.set('categoria', filtros.categoria); }
-        if (filtros.estado) { params.set('estado', filtros.estado); }
-        if (filtros.resueltos) { params.set('resueltos', '1'); }
+        if (interactivo) {
+            if (filtros.categoria) { params.set('categoria', filtros.categoria); }
+            if (filtros.estado) { params.set('estado', filtros.estado); }
+            if (filtros.resueltos) { params.set('resueltos', '1'); }
+        }
 
         contador.textContent = 'Cargando reclamos…';
 
@@ -160,6 +179,7 @@
     // ---- Controles de filtro ----
     function conectarChips(idContenedor, clave) {
         var grupo = document.getElementById(idContenedor);
+        if (!grupo || !interactivo) { return; }
 
         grupo.addEventListener('click', function (evento) {
             var boton = evento.target.closest('.chip');
@@ -183,38 +203,52 @@
     conectarChips('filtro-categoria', 'categoria');
     conectarChips('filtro-estado', 'estado');
 
-    document.getElementById('filtro-resueltos').addEventListener('change', function (evento) {
-        filtros.resueltos = evento.target.checked;
-        cargar();
-    });
+    var filtroResueltos = document.getElementById('filtro-resueltos');
+    if (interactivo && filtroResueltos) {
+        filtroResueltos.addEventListener('change', function (evento) {
+            filtros.resueltos = evento.target.checked;
+
+            // Si se excluyen resueltos, limpiar también el filtro de estado "resuelto".
+            if (!filtros.resueltos && filtros.estado === 'resuelto') {
+                filtros.estado = '';
+                document.querySelectorAll('#filtro-estado .chip').forEach(function (chip) {
+                    chip.classList.toggle('is-active', chip.dataset.valor === '');
+                });
+            }
+
+            cargar();
+        });
+    }
 
     // ---- Ir a mi ubicación ----
     var botonUbicacion = document.getElementById('btn-ubicacion');
     var marcadorUsuario = null;
 
-    botonUbicacion.addEventListener('click', function () {
-        if (!navigator.geolocation) {
-            contador.textContent = 'Tu navegador no permite obtener la ubicación.';
-            return;
-        }
+    if (interactivo && botonUbicacion) {
+        botonUbicacion.addEventListener('click', function () {
+            if (!navigator.geolocation) {
+                contador.textContent = 'Tu navegador no permite obtener la ubicación.';
+                return;
+            }
 
-        contador.textContent = 'Buscando tu ubicación…';
+            contador.textContent = 'Buscando tu ubicación…';
 
-        navigator.geolocation.getCurrentPosition(function (posicion) {
-            var punto = [posicion.coords.latitude, posicion.coords.longitude];
+            navigator.geolocation.getCurrentPosition(function (posicion) {
+                var punto = [posicion.coords.latitude, posicion.coords.longitude];
 
-            if (marcadorUsuario) { mapa.removeLayer(marcadorUsuario); }
+                if (marcadorUsuario) { mapa.removeLayer(marcadorUsuario); }
 
-            marcadorUsuario = L.circleMarker(punto, {
-                radius: 9, color: '#fff', weight: 3, fillColor: '#2F6DA3', fillOpacity: 1
-            }).addTo(mapa).bindTooltip('Estás acá');
+                marcadorUsuario = L.circleMarker(punto, {
+                    radius: 9, color: '#fff', weight: 3, fillColor: '#2F6DA3', fillOpacity: 1
+                }).addTo(mapa).bindTooltip('Estás acá');
 
-            mapa.setView(punto, 16);
-            contador.textContent = 'Mostrando tu ubicación.';
-        }, function () {
-            contador.textContent = 'No pudimos obtener tu ubicación. Revisá los permisos del navegador.';
-        }, { enableHighAccuracy: true, timeout: 10000 });
-    });
+                mapa.setView(punto, 16);
+                contador.textContent = 'Mostrando tu ubicación.';
+            }, function () {
+                contador.textContent = 'No pudimos obtener tu ubicación. Revisá los permisos del navegador.';
+            }, { enableHighAccuracy: true, timeout: 10000 });
+        });
+    }
 
     cargar();
 })();
