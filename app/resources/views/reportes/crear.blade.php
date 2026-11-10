@@ -28,8 +28,9 @@
     </div>
 
     {{-- Envía los datos al método guardar del controlador. --}}
-    <form action="{{ route('reclamos.guardar') }}" method="POST" id="form-reclamo" novalidate>
+    <form action="{{ route('reclamos.guardar') }}" method="POST" enctype="multipart/form-data" id="form-reclamo" novalidate>
         {{-- Token de seguridad obligatorio en formularios POST de Laravel. --}}
+
         @csrf
 
         <div class="grid-detalle">
@@ -81,10 +82,36 @@
                     </div>
                 </div>
 
-                <div class="aviso" style="margin-bottom:0">
-                    <strong>Fotos</strong>
-                    <p>La carga de fotografías estará disponible próximamente.</p>
-                </div>
+                {{-- Fotografías del problema: entre una y cuatro imágenes --}}
+<div class="card">
+    <div class="campo" style="margin-bottom:0">
+        <label for="fotos">Fotografías del problema</label>
+
+        <input
+            type="file"
+            id="fotos"
+            name="fotos[]"
+            accept="image/jpeg,image/png,image/webp"
+            multiple
+            required
+        >
+
+        <small>
+            Adjuntá entre 1 y 4 fotografías.
+            Formatos JPG, PNG o WebP. Máximo 2 MB por imagen.
+        </small>
+
+        @error('fotos')
+            <p class="error">{{ $message }}</p>
+        @enderror
+
+        @foreach ($errors->get('fotos.*') as $mensajes)
+            @foreach ($mensajes as $mensaje)
+                <p class="error">{{ $mensaje }}</p>
+            @endforeach
+        @endforeach
+    </div>
+</div>
             </div>
 
             <div class="stack">

@@ -20,6 +20,8 @@ use Illuminate\Support\Facades\DB;
 // Permite comprobar que la categoría seleccionada exista y esté activa.
 use Illuminate\Validation\Rule;
 
+use Illuminate\Support\Facades\Storage;
+
 class ReporteController extends Controller
 {
     // Comprueba que el usuario sea ciudadano.
@@ -49,58 +51,74 @@ class ReporteController extends Controller
     }
 
     // Procesa los datos que el ciudadano envía desde el formulario.
-    public function guardar(Request $request)
-    {
-        // Vuelve a comprobar el rol: proteger solo la pantalla no alcanza.
-        $this->soloCiudadanos();
+public function guardar(Request $request)
+{
+    // Solo un ciudadano autenticado puede registrar reclamos.
+    $this->soloCiudadanos();
 
-        // Valida los datos antes de intentar guardarlos.
-        $datos = $request->validate([
-            'categoria_id' => [
-                'required',
-                'integer',
-                Rule::exists('categorias', 'id')->where('activa', 1),
-            ],
-            'descripcion' => ['required', 'string', 'min:10', 'max:500'],
-            'direccion' => ['nullable', 'string', 'max:80'],
-            'latitud' => ['required', 'numeric', 'between:-90,90'],
-            'longitud' => ['required', 'numeric', 'between:-180,180'],
-        ], [
-            'categoria_id.required' => 'Elegí el tipo de problema.',
-            'categoria_id.integer' => 'La categoría elegida no es válida.',
-            'categoria_id.exists' => 'La categoría elegida no es válida.',
-            'descripcion.required' => 'Describí brevemente el problema.',
-            'descripcion.min' => 'La descripción debe tener al menos :min caracteres.',
-            'descripcion.max' => 'La descripción no puede superar los :max caracteres.',
-            'direccion.max' => 'La dirección o referencia no puede superar los :max caracteres.',
-            'latitud.required' => 'Marcá en el mapa el lugar del problema.',
-            'longitud.required' => 'Marcá en el mapa el lugar del problema.',
-            'latitud.numeric' => 'La ubicación marcada no es válida. Volvé a marcarla en el mapa.',
-            'longitud.numeric' => 'La ubicación marcada no es válida. Volvé a marcarla en el mapa.',
-            'latitud.between' => 'La ubicación marcada no es válida. Volvé a marcarla en el mapa.',
-            'longitud.between' => 'La ubicación marcada no es válida. Volvé a marcarla en el mapa.',
-        ]);
+    // Validación de los datos y las fotografías.
+    $datos = $request->validate([
+        'categoria_id' => [
+            'required',
+            'integer',
+            Rule::exists('categorias', 'id')->where('activa', 1),
+        ],
+        'descripcion' => ['required', 'string', 'min:10', 'max:500'],
+        'direccion' => ['nullable', 'string', 'max:80'],
+        'latitud' => ['required', 'numeric', 'between:-90,90'],
+        'longitud' => ['required', 'numeric', 'between:-180,180'],
 
-        // Ejecuta el registro del reclamo y su historial como una sola operación.
-        // Si falla cualquiera de las dos escrituras, la transacción se revierte.
-        DB::transaction(function () use ($datos) {
+        // La tabla fotos admite como máximo cuatro por reclamo.
+        'fotos' => ['required', 'array', 'min:1', 'max:4'],
+        'fotos.*' => [
+            'required',
+            'image',
+            'mimes:jpg,jpeg,png,webp',
+            'max:2048',
+        ],
+    ], [
+        'categoria_id.required' => 'Elegí el tipo de problema.',
+        'categoria_id.integer' => 'La categoría elegida no es válida.',
+        'categoria_id.exists' => 'La categoría elegida no es válida.',
+        'descripcion.required' => 'Describí brevemente el problema.',
+        'descripcion.min' => 'La descripción debe tener al menos :min caracteres.',
+        'descripcion.max' => 'La descripción no puede superar los :max caracteres.',
+        'direccion.max' => 'La dirección no puede superar los :max caracteres.',
+        'latitud.required' => 'Marcá en el mapa el lugar del problema.',
+        'longitud.required' => 'Marcá en el mapa el lugar del problema.',
+        'latitud.numeric' => 'La ubicación marcada no es válida.',
+        'longitud.numeric' => 'La ubicación marcada no es válida.',
+        'latitud.between' => 'La ubicación marcada no es válida.',
+        'longitud.between' => 'La ubicación marcada no es válida.',
+        'fotos.required' => 'Adjuntá al menos una fotografía.',
+        'fotos.array' => 'Las fotografías enviadas no son válidas.',
+        'fotos.min' => 'Adjuntá al menos una fotografía.',
+        'fotos.max' => 'Podés adjuntar como máximo cuatro fotografías.',
+        'fotos.*.image' => 'El archivo debe ser una imagen válida.',
+        'fotos.*.mimes' => 'Solo se admiten fotografías JPG, PNG o WebP.',
+        'fotos.*.max' => 'Cada fotografía puede pesar como máximo 2 MB.',
+    ]);
 
-            // Recupera la categoría que eligió el ciudadano.
+    // Registramos las rutas para poder limpiar los archivos
+    // si ocurre un error mientras se guarda el reclamo.
+    $rutasGuardadas = [];
+
+    try {
+        DB::transaction(function () use ($datos, &$rutasGuardadas) {
+
             $categoria = Categoria::findOrFail($datos['categoria_id']);
 
-            // Busca el identificador del estado inicial "recibido".
             $estadoRecibidoId = DB::table('estados')
                 ->where('nombre', 'recibido')
                 ->value('id');
 
-            // Si falta ese estado en la base, detiene el proceso.
             abort_if(
                 $estadoRecibidoId === null,
                 500,
                 'Falta el estado inicial "recibido" en la base.'
             );
 
-            // Crea el reclamo con el usuario autenticado y los datos validados.
+            // Primero se crea el reclamo.
             $reporte = Reporte::create([
                 'usuario_id' => Auth::id(),
                 'categoria_id' => $categoria->id,
@@ -112,7 +130,7 @@ class ReporteController extends Controller
                 'longitud' => round((float) $datos['longitud'], 6),
             ]);
 
-            // Registra en el historial que el reclamo fue recibido.
+            // Se registra el estado inicial en el historial.
             DB::table('historial_estados')->insert([
                 'reporte_id' => $reporte->id,
                 'estado_id' => $estadoRecibidoId,
@@ -120,12 +138,49 @@ class ReporteController extends Controller
                 'usuario_id' => Auth::id(),
                 'observacion' => 'Reclamo registrado por el ciudadano',
             ]);
+
+            // Guardar las fotografías en el disco público de Laravel.
+            foreach ($datos['fotos'] as $indice => $foto) {
+
+                // Cada reclamo tiene su propia carpeta.
+                // Laravel genera un nombre único para cada archivo.
+                $ruta = $foto->store(
+                    'reportes/' . $reporte->id,
+                    'public'
+                );
+
+                if ($ruta === false) {
+                    throw new \RuntimeException(
+                        'No se pudo almacenar una fotografía.'
+                    );
+                }
+
+                $rutasGuardadas[] = $ruta;
+
+                // Vincula la imagen con el reclamo en la tabla fotos.
+                DB::table('fotos')->insert([
+                    'reporte_id' => $reporte->id,
+                    'url' => $ruta,
+                    'orden' => $indice + 1,
+                ]);
+            }
         });
 
-        // Vuelve al panel y muestra un mensaje de confirmación.
-        return redirect('/panel')
-            ->with('status', 'Tu reclamo fue registrado correctamente.');
+    } catch (\Throwable $error) {
+
+        // La transacción revierte los registros de la base.
+        // También eliminamos las imágenes ya almacenadas
+        // para evitar archivos huérfanos.
+        if (! empty($rutasGuardadas)) {
+            Storage::disk('public')->delete($rutasGuardadas);
+        }
+
+        throw $error;
     }
+
+    return redirect('/panel')
+        ->with('status', 'Tu reclamo fue registrado correctamente.');
+}
         // Muestra al ciudadano únicamente sus propios reclamos.
     public function misReclamos()
     {

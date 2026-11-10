@@ -200,6 +200,13 @@ Route::middleware('auth')->group(function () {
             ->whereNumber('reporte')
             ->name('gestion.area');
 
+        Route::post(
+        '/gestion/{reporte}/duplicados/{similar}', [GestionController::class, 'confirmarDuplicado']
+        )
+        ->whereNumber('reporte')
+        ->whereNumber('similar')
+        ->name('gestion.duplicados.confirmar');
+
     });
 
 

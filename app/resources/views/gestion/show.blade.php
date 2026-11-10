@@ -71,11 +71,102 @@
 
                     <section class="gestion-seccion">
                         <h2>Fotografías</h2>
-                        <p class="gestion-aclaracion">La carga de fotografías todavía no está disponible en el backend.</p>
+                        @include('partials.reclamo-fotos', ['fotos' => $fotos])
                     </section>
                 </div>
 
                 <div class="gestion-pila">
+                    <section class="gestion-seccion">
+                        <h2>Duplicados confirmados</h2>
+                        @if ($vinculoComoDuplicado)
+                            <p>Este reclamo fue vinculado como duplicado del
+                                <a href="{{ route('gestion.ver', ['reporte' => $vinculoComoDuplicado->reporte_principal_id]) }}">
+                                    reclamo principal #{{ $vinculoComoDuplicado->reporte_principal_id }}
+                                </a>.
+                            </p>
+                        @elseif ($duplicadosConfirmados->isNotEmpty())
+                            <p>Este reclamo es la referencia principal de los siguientes duplicados:</p>
+                            <ul style="padding-left:20px; margin:12px 0;">
+                                @foreach ($duplicadosConfirmados as $confirmado)
+                                    <li style="margin-bottom:8px;">
+                                        <a href="{{ route('gestion.ver', ['reporte' => $confirmado->reporte_duplicado_id]) }}">
+                                            Reclamo #{{ $confirmado->reporte_duplicado_id }}
+                                        </a>
+                                        @if ($confirmado->observacion)
+                                            <span class="gestion-aclaracion">— {{ $confirmado->observacion }}</span>
+                                        @endif
+                                    </li>
+                                @endforeach
+                            </ul>
+                        @else
+                            <p class="gestion-aclaracion">Este reclamo todavía no tiene vínculos confirmados.</p>
+                        @endif
+                        <p class="gestion-aclaracion">La confirmación no cambia los estados, propietarios ni fotografías.</p>
+                    </section>
+
+                    <section class="gestion-seccion">
+                        <h2>Posibles duplicados cercanos</h2>
+                        <p class="gestion-aclaracion">
+                            Misma categoría y reclamos pendientes en un radio de
+                            {{ number_format($radioMetros, 0, ',', '.') }} metros.
+                        </p>
+
+                        @if ($reclamo->estado === 'resuelto')
+                            <p>El reclamo está resuelto; no se buscan coincidencias pendientes.</p>
+                        @elseif ($coincidencias->isEmpty())
+                            <p>No se encontraron otros reclamos cercanos de esta categoría.</p>
+                        @else
+                            <p><strong>{{ $coincidencias->count() }} posible(s) coincidencia(s)</strong></p>
+                            <ul style="padding-left:20px; margin:12px 0;">
+                                @foreach ($coincidencias->take(10) as $similar)
+                                    <li style="margin-bottom:12px;">
+                                        <a href="{{ route('gestion.ver', ['reporte' => $similar->id]) }}">
+                                            Reclamo #{{ $similar->id }}
+                                        </a>
+                                        — a {{ number_format($similar->distancia_metros, 1, ',', '.') }} m
+                                        <div class="gestion-aclaracion">
+                                            {{ ucfirst($similar->estado) }} · {{ $similar->barrio ?: 'Sin referencia' }}
+                                        </div>
+                                        @php
+                                            $vinculo = $vinculosCandidatos->get($similar->id);
+                                            $principalOcupado = $principalesCandidatos->contains($similar->id);
+                                            $yaVinculados = $vinculo
+                                                && (int) $vinculo->reporte_principal_id === (int) $reclamo->id;
+                                            $similarEsMasAntiguo = $similar->fecha_creacion < $reclamo->fecha_creacion
+                                                || ($similar->fecha_creacion === $reclamo->fecha_creacion && $similar->id < $reclamo->id);
+                                            $cambiariaPrincipal = $duplicadosConfirmados->isNotEmpty() && $similarEsMasAntiguo;
+                                        @endphp
+                                        @if ($yaVinculados || $duplicadosConfirmados->contains('reporte_duplicado_id', $similar->id))
+                                            <p class="gestion-aclaracion">Ya vinculado con este reclamo.</p>
+                                        @elseif ($vinculoComoDuplicado || $vinculo || ($principalOcupado && ! $similarEsMasAntiguo) || $cambiariaPrincipal)
+                                            <p class="gestion-aclaracion">No se puede confirmar desde aquí: existe otra relación de duplicados.</p>
+                                        @else
+                                            <form method="POST"
+                                                  action="{{ route('gestion.duplicados.confirmar', ['reporte' => $reclamo->id, 'similar' => $similar->id]) }}"
+                                                  class="gestion-formulario" style="margin-top:8px;">
+                                                @csrf
+                                                <label for="observacion-duplicado-{{ $similar->id }}">Motivo (opcional)</label>
+                                                <input id="observacion-duplicado-{{ $similar->id }}"
+                                                       type="text" name="observacion_duplicado"
+                                                       maxlength="500" placeholder="Ej.: mismo poste dañado">
+                                                <button type="submit" class="gestion-boton gestion-boton--secundario">
+                                                    Confirmar duplicado
+                                                </button>
+                                            </form>
+                                        @endif
+                                    </li>
+                                @endforeach
+                            </ul>
+                            @if ($coincidencias->count() > 10)
+                                <p class="gestion-aclaracion">Se muestran las 10 coincidencias más cercanas.</p>
+                            @endif
+                        @endif
+                        <p class="gestion-aclaracion">
+                            La proximidad no confirma que se trate del mismo problema.
+                            Revisá los detalles antes de tomar una decisión.
+                        </p>
+                    </section>
+
                     <section class="gestion-seccion">
                         <h2>Actualizar estado</h2>
                         @if (count($transiciones) === 0)

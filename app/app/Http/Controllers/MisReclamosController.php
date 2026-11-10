@@ -70,6 +70,7 @@ class MisReclamosController extends Controller
         return view('reportes.show', [
             'reclamo'   => $reclamo,
             'historial' => $historial,
+            'fotos'     => DB::table('fotos')->where('reporte_id', $reporte)->orderBy('orden')->get(),
             'municipio' => false,
         ]);
     }

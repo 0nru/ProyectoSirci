@@ -3,7 +3,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const mapaElemento = document.getElementById('mapa');
     const campoLatitud = document.getElementById('latitud');
     const campoLongitud = document.getElementById('longitud');
-    const mensajeMapa = document.getElementById('mensaje-mapa');
+    const mensajeMapa = document.getElementById('ubicacion-texto');
     const formulario = document.getElementById('form-reclamo');
 
     // Si esta página no contiene el mapa, no hacemos nada.

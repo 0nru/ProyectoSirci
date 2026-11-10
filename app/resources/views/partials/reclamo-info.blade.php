@@ -42,8 +42,5 @@
 
 <div class="card">
     <h2 style="margin-bottom:12px">Fotos</h2>
-    <div class="fotos">
-        <div class="foto-placeholder">@include('partials.icon', ['n' => 'camera', 't' => 24])</div>
-    </div>
-    <p class="faint small" style="margin-top:8px">La carga de fotografías estará disponible próximamente.</p>
+    @include('partials.reclamo-fotos', ['fotos' => $fotos])
 </div>
