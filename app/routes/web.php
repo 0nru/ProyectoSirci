@@ -41,16 +41,15 @@ Route::get('/', fn () => redirect()->route('panel'));
 | Muestra la ubicación de los reclamos y permite filtrarlos.
 |
 */
-
 // Pantalla del mapa.
 Route::get('/mapa', [\App\Http\Controllers\MapaController::class, 'index'])
+    ->middleware(\App\Http\Middleware\VerificarUsuarioActivo::class)
     ->name('mapa');
 
-// Datos de los reclamos en formato JSON para Leaflet.
+// Datos del mapa para Leaflet.
 Route::get('/mapa/datos', [\App\Http\Controllers\MapaController::class, 'datos'])
+    ->middleware(\App\Http\Middleware\VerificarUsuarioActivo::class)
     ->name('mapa.datos');
-
-
 /*
 |--------------------------------------------------------------------------
 | RUTAS PARA VISITANTES
@@ -86,8 +85,10 @@ Route::middleware('guest')->group(function () {
 | Todas estas rutas requieren una sesión iniciada.
 |
 */
-
-Route::middleware('auth')->group(function () {
+Route::middleware([
+    'auth',
+    \App\Http\Middleware\VerificarUsuarioActivo::class,
+])->group(function () {
     /*
 |--------------------------------------------------------------------------
 | NOTIFICACIONES DEL CIUDADANO
@@ -206,6 +207,24 @@ Route::middleware('auth')->group(function () {
         ->whereNumber('reporte')
         ->whereNumber('similar')
         ->name('gestion.duplicados.confirmar');
+
+    });
+    // Administración de usuarios: solo supervisores.
+Route::middleware(\App\Http\Middleware\SoloSupervisor::class)
+    ->group(function () {
+
+        Route::get('/usuarios',
+            [\App\Http\Controllers\AdministracionUsuariosController::class, 'index'])
+            ->name('usuarios.index');
+
+        Route::post('/usuarios',
+            [\App\Http\Controllers\AdministracionUsuariosController::class, 'crearOperador'])
+            ->name('usuarios.crearOperador');
+
+        Route::post('/usuarios/{usuario}',
+            [\App\Http\Controllers\AdministracionUsuariosController::class, 'actualizar'])
+            ->whereNumber('usuario')
+            ->name('usuarios.actualizar');
 
     });
 

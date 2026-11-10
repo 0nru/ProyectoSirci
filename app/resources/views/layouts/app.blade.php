@@ -27,6 +27,13 @@
         ['url' => '/indicadores', 'texto' => 'Indicadores', 'icono' => 'chart'],
         ['url' => '/mapa', 'texto' => 'Mapa', 'icono' => 'map'],
     ];
+        if ($usuario->rol === 'supervisor') {
+        $menu[] = [
+            'url' => '/usuarios',
+            'texto' => 'Usuarios',
+            'icono' => 'list',
+        ];
+    }
     } elseif ($usuario) {
         $menu = [
             ['url' => '/panel', 'texto' => 'Inicio', 'icono' => 'home'],
