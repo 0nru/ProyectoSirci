@@ -2,18 +2,27 @@
 
 namespace Tests\Feature;
 
-// use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class ExampleTest extends TestCase
 {
     /**
-     * A basic test example.
+     * La ruta principal debe redirigir al panel.
      */
-    public function test_the_application_returns_a_successful_response(): void
+    public function test_la_ruta_principal_redirige_al_panel(): void
     {
         $response = $this->get('/');
 
-        $response->assertStatus(200);
+        $response->assertRedirect(route('panel'));
+    }
+
+    /**
+     * Un visitante no autenticado no puede entrar al panel.
+     */
+    public function test_un_visitante_no_puede_acceder_al_panel(): void
+    {
+        $response = $this->get('/panel');
+
+        $response->assertRedirect(route('login'));
     }
 }
