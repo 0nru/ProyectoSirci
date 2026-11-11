@@ -46,21 +46,25 @@ class DashboardController extends Controller
         $horas = DB::table('reportes as r')
             ->whereNotNull('r.fecha_resolucion')
             ->when($desde, fn ($q) => $q->where('r.fecha_creacion', '>=', $desde))
-            ->avg(DB::raw('TIMESTAMPDIFF(HOUR, r.fecha_creacion, r.fecha_resolucion)'));
+            ->avg(DB::raw('TIMESTAMPDIFF(SECOND, r.fecha_creacion, r.fecha_resolucion) / 3600.0'));
 
         if ($horas === null) {
             $tiempo = ['valor' => '—', 'unidad' => ''];
         } elseif ($horas < 48) {
-            $tiempo = ['valor' => number_format((float) $horas, 0, ',', '.'), 'unidad' => 'h'];
+            $tiempo = ['valor' => number_format((float) $horas, 1, ',', '.'), 'unidad' => 'h'];
         } else {
             $tiempo = ['valor' => number_format($horas / 24, 1, ',', '.'), 'unidad' => 'días'];
         }
-
-        // ---- Reclamos sin atender hace más de 3 días (pendientes actuales) ----
+        // Reclamos recibidos hace más de 3 días,
+        // respetando el período seleccionado.
         $demorados = DB::table('reportes as r')
             ->join('estados as e', 'e.id', '=', 'r.estado_id')
             ->where('e.nombre', 'recibido')
             ->where('r.fecha_creacion', '<', now()->subDays(3))
+            ->when($desde, function ($consulta) use ($desde) {
+                $consulta->where('r.fecha_creacion', '>=', $desde);
+            })
+
             ->count();
 
         // ---- Distribuciones ----
