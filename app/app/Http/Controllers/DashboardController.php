@@ -43,10 +43,15 @@ class DashboardController extends Controller
         $kpis['tasa'] = $total > 0 ? (int) round($kpis['resueltos'] * 100 / $total) : 0;
 
         // ---- Tiempo promedio de resolución ----
+        // MariaDB y SQLite utilizan expresiones de fecha diferentes.
+        $expresionTiempo = DB::connection()->getDriverName() === 'sqlite'
+            ? "(strftime('%s', r.fecha_resolucion) - strftime('%s', r.fecha_creacion)) / 3600.0"
+            : 'TIMESTAMPDIFF(SECOND, r.fecha_creacion, r.fecha_resolucion) / 3600.0';
+
         $horas = DB::table('reportes as r')
             ->whereNotNull('r.fecha_resolucion')
             ->when($desde, fn ($q) => $q->where('r.fecha_creacion', '>=', $desde))
-            ->avg(DB::raw('TIMESTAMPDIFF(SECOND, r.fecha_creacion, r.fecha_resolucion) / 3600.0'));
+            ->avg(DB::raw($expresionTiempo));
 
         if ($horas === null) {
             $tiempo = ['valor' => '—', 'unidad' => ''];
